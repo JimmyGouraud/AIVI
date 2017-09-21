@@ -23,6 +23,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <queue>
 
 #include <opencv2/highgui/highgui.hpp> //VideoCapture, imshow, imwrite, ...
 #include <opencv2/imgproc/imgproc.hpp> //cvtColor
@@ -30,75 +31,89 @@
 
 #include "utils.hpp" // compute fonction
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-  if(argc != 3) {
-    std::cerr << "Usage: " << argv[0] << " video-filename distance-between-two-frames-for-prediction" << std::endl;
-    return EXIT_FAILURE;
-  }
+    if(argc != 3) {
+        std::cerr << "Usage: " << argv[0] << " video-filename distance-between-two-frames-for-prediction" << std::endl;
+        return EXIT_FAILURE;
+    }
 
-  const char *videoFilename = argv[1];
+    const char *videoFilename = argv[1];
 
-  const int interFramesDistance = atoi(argv[2]);
-  if (interFramesDistance <= 0) {
-    std::cerr << "Error: distance-between-two-frames-for-prediction must be a strictly positive integer" << std::endl;
-    return EXIT_FAILURE;
-  }
+    const int interFramesDistance = atoi(argv[2]);
+    if (interFramesDistance <= 0) {
+        std::cerr << "Error: distance-between-two-frames-for-prediction must be a strictly positive integer" << std::endl;
+        return EXIT_FAILURE;
+    }
 
-  cv::VideoCapture cap;
-  cap.open(videoFilename);
-  if (!cap.isOpened()) {
-    std::cerr << "Error : Unable to open video file " << argv[1] << std::endl;
-    return -1;
-  }
+    cv::VideoCapture cap;
+    cap.open(videoFilename);
+    if (!cap.isOpened()) {
+        std::cerr << "Error : Unable to open video file " << argv[1] << std::endl;
+        return -1;
+    }
 
-  unsigned long frameNumber = 0;
+    unsigned long frameNumber = 0;
 
-  /*
-  // Part 1.1)
-  for ( ; ; ) {
-    // les images OpenCV sont stockés dans des cv::Mat
-    cv::Mat frameBGR, frameYCRCB;
+    /*
+    // Part 1.1)
+    for ( ; ; ) {
+        // les images OpenCV sont stockés dans des cv::Mat
+        cv::Mat frameBGR, frameYCRCB;
 
-    cap >> frameBGR;
-    cvtColor(frameBGR, frameYCRCB, CV_BGR2YCrCb); // On convertie frameBGR en YCrCb et on stock dans frameYCRCB
+        cap >> frameBGR;
+        cvtColor(frameBGR, frameYCRCB, CV_BGR2YCrCb); // On convertie frameBGR en YCrCb et on stock dans frameYCRCB
 
-    if (frameBGR.empty()) { break; }
-    if (cv::waitKey(30) >= 0) { break; }
+        if (frameBGR.empty()) { break; }
+        if (cv::waitKey(30) >= 0) { break; }
 
-    imshow("frameBGR", frameBGR);
-    imshow("frameYCRCB", frameYCRCB);
+        imshow("frameBGR", frameBGR);
+        imshow("frameYCRCB", frameYCRCB);
 
-    cv::imwrite("frameBGR_" + std::to_string(frameNumber) + ".png", frameBGR);
-    cv::imwrite("frameYCRCB_" + std::to_string(frameNumber) + ".png", frameYCRCB);
+        cv::imwrite("frameBGR_" + std::to_string(frameNumber) + ".png", frameBGR);
+        cv::imwrite("frameYCRCB_" + std::to_string(frameNumber) + ".png", frameYCRCB);
 
-    ++frameNumber;
-  }
-  */
+        ++frameNumber;
+    }
+    */
 
-  // Part 1.2)
-  cv::Mat frameBGR, framePrec, frameCur, frameErr;
-  cap >> frameBGR;
-  cvtColor(frameBGR, framePrec, CV_BGR2GRAY);
-  cvtColor(frameBGR, frameErr, CV_BGR2GRAY);
+    // Part 1.2)
+    cv::Mat frameBGR;
+    std::queue<cv::Mat> frames;
+    for (int i = 0; i <= interFramesDistance; i++) {
+        cv::Mat frame;
+        cap >> frameBGR;
+        cvtColor(frameBGR, frame, CV_BGR2GRAY);
+        frames.push(frame);
+    }
 
-  for ( ; ; ) {
-    cap >> frameBGR;
-    if (frameBGR.empty()) { break; }
-    if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
+    cv::Mat framePrec, frameCur, frameErr;
+    cvtColor(frameBGR, frameErr, CV_BGR2GRAY);
+    for ( ; ; ) {
+        framePrec = frames.front();
+        frameCur = frames.back();
 
-    cvtColor(frameBGR, frameCur, CV_BGR2GRAY);
-    //double MSE = computeMSE(framePrec, frameCur);
-    //double PSNR = computePSNR(framePrec, frameCur);
-    //double entropy = computeEntropy(framePrec);
-    //computeErrorImage(framePrec, frameCur, frameErr);
-    computeDisplayableErrorImage(framePrec, frameCur, frameErr);
-    imshow("frameErr", frameErr);
+        if (frameBGR.empty()) { break; }
+        if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
 
-    framePrec = frameCur.clone();
-    ++frameNumber;
-  }
+        //double MSE = computeMSE(framePrec, frameCur);
+        //double PSNR = computePSNR(framePrec, frameCur);
+        //double entropy = computeEntropy(framePrec);
+        //computeErrorImage(framePrec, frameCur, frameErr);
+        computeDisplayableErrorImage(framePrec, frameCur, frameErr);
 
-  return EXIT_SUCCESS;
+        //imshow("framePrec", framePrec);
+        //imshow("frameCur", frameCur);
+        imshow("frameErr", frameErr);
+
+        cap >> frameBGR;
+        cv::Mat frame;
+        cvtColor(frameBGR, frame, CV_BGR2GRAY);
+        frames.push(frame);
+        frames.pop();
+
+        ++frameNumber;
+    }
+
+    return EXIT_SUCCESS;
 }
