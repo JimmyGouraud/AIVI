@@ -1,11 +1,19 @@
 #ifndef UTILS_HPP
 #define UTILS_HPP
 
+#include <iostream>
+#include <math.h>
+#include <iterator>
+
 #include <opencv2/core/core.hpp>
 
 //compute error image
 //im & imC are input images, imErr is the output image
 extern void computeErrorImage(const cv::Mat &im, const cv::Mat &imC, cv::Mat &imErr);
+
+//compute displayable error image
+//im & imC are input images, imErr is the output image
+extern void computeDisplayableErrorImage(const cv::Mat &im, const cv::Mat &imC, cv::Mat &imErr);
 
 //compute MSE between two images
 extern double computeMSE(const cv::Mat &im, const cv::Mat &imC);
