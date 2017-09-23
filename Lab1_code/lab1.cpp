@@ -59,7 +59,7 @@ int main(int argc, char **argv)
     // Part 1.1)
     unsigned long frameNumber = 0;
     for ( ; ; ) {
-        // les images OpenCV sont stockés dans des cv::Mat
+        // les images OpenCV sont stockées dans des cv::Mat
         cv::Mat frameBGR, frameYCRCB;
 
         cap >> frameBGR;
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     }
     */
 
-    // Part 1.2)
+    // Part 1.2) & 1.3)
     cv::Mat frameBGR;
     std::queue<cv::Mat> frames;
     for (int i = 0; i <= interFramesDistance; i++) {
@@ -88,9 +88,9 @@ int main(int argc, char **argv)
         frames.push(frame);
     }
 
-    std::ofstream file_mse("../stats_mse.txt", std::ios::out | std::ios::trunc);
-    std::ofstream file_psnr("../stats_psnr.txt", std::ios::out | std::ios::trunc);
-    std::ofstream file_entropy("../stats_entropy.txt", std::ios::out | std::ios::trunc);
+    std::ofstream file_mse("../gnuplot/stats_mse.txt", std::ios::out | std::ios::trunc);
+    std::ofstream file_psnr("../gnuplot/stats_psnr.txt", std::ios::out | std::ios::trunc);
+    std::ofstream file_entropy("../gnuplot/stats_entropy.txt", std::ios::out | std::ios::trunc);
     unsigned long frameNumber = 0;
     cv::Mat framePrec, frameCur, frameErr;
     cvtColor(frameBGR, frameErr, CV_BGR2GRAY);

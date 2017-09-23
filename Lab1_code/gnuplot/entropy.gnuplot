@@ -12,10 +12,10 @@ set output "entropy.png"
 
 set xlabel "Frames"
 set ylabel "entropy Current, entropy Error"
-#set xrange [0:110]
-#set yrange [0: 700]
+set xrange [0:100]
+set yrange [0:10]
 set xtics 10
-set ytics 50
+set ytics 1
 set style line 1 lw 5
 set style line 2 lw 5
 plot 'stats_entropy.txt' using 1:2 with lines title 'entropy Current', 'stats_entropy.txt' using 1:3 with lines title 'entropy Error'

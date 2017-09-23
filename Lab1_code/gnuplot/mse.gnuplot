@@ -12,8 +12,8 @@ set output "mse.png"
 
 set xlabel "Frames"
 set ylabel "MSE"
-#set xrange [0:110]
-#set yrange [0:700]
+set xrange [0:100]
+set yrange [0:750]
 set xtics 10
 set ytics 50
 set style line 1 lw 5
