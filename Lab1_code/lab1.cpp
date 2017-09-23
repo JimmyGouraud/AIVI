@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <queue>
+#include <fstream>
 
 #include <opencv2/highgui/highgui.hpp> //VideoCapture, imshow, imwrite, ...
 #include <opencv2/imgproc/imgproc.hpp> //cvtColor
@@ -53,10 +54,10 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    unsigned long frameNumber = 0;
 
     /*
     // Part 1.1)
+    unsigned long frameNumber = 0;
     for ( ; ; ) {
         // les images OpenCV sont stockés dans des cv::Mat
         cv::Mat frameBGR, frameYCRCB;
@@ -87,6 +88,10 @@ int main(int argc, char **argv)
         frames.push(frame);
     }
 
+    std::ofstream file_mse("../stats_mse.txt", std::ios::out | std::ios::trunc);
+    std::ofstream file_psnr("../stats_psnr.txt", std::ios::out | std::ios::trunc);
+    std::ofstream file_entropy("../stats_entropy.txt", std::ios::out | std::ios::trunc);
+    unsigned long frameNumber = 0;
     cv::Mat framePrec, frameCur, frameErr;
     cvtColor(frameBGR, frameErr, CV_BGR2GRAY);
     for ( ; ; ) {
@@ -96,15 +101,26 @@ int main(int argc, char **argv)
         if (frameBGR.empty()) { break; }
         if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
 
-        //double MSE = computeMSE(framePrec, frameCur);
-        //double PSNR = computePSNR(framePrec, frameCur);
-        //double entropy = computeEntropy(framePrec);
-        //computeErrorImage(framePrec, frameCur, frameErr);
-        computeDisplayableErrorImage(framePrec, frameCur, frameErr);
+        double MSE = computeMSE(framePrec, frameCur);
+        double PSNR = computePSNR(framePrec, frameCur);
 
-        //imshow("framePrec", framePrec);
-        //imshow("frameCur", frameCur);
+        double entropyCur = computeEntropy(frameCur);
+        computeErrorImage(framePrec, frameCur, frameErr);
+        double entropyErr = computeEntropy(frameErr);
+
+        //computeDisplayableErrorImage(framePrec, frameCur, frameErr);
+
+        /*
+        // Afficher les frames
+        imshow("framePrec", framePrec);
+        imshow("frameCur", frameCur);
         imshow("frameErr", frameErr);
+        */
+
+        // Create file for gnuplot
+        file_mse     << frameNumber << " " << MSE  << '\n';
+        file_psnr    << frameNumber << " " << PSNR << '\n';
+        file_entropy << frameNumber << " " << entropyCur  << " " << entropyErr << '\n';
 
         cap >> frameBGR;
         cv::Mat frame;
@@ -114,6 +130,10 @@ int main(int argc, char **argv)
 
         ++frameNumber;
     }
+
+    file_mse.close();
+    file_psnr.close();
+    file_entropy.close();
 
     return EXIT_SUCCESS;
 }

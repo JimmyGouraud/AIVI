@@ -8,7 +8,7 @@ void computeErrorImage(const cv::Mat &im, const cv::Mat &imC, cv::Mat &imErr)
     cv::MatConstIterator_<uchar> itPrec = im.begin<uchar>();
     cv::MatConstIterator_<uchar> itCur = imC.begin<uchar>();
     cv::MatIterator_<uchar> itErr = imErr.begin<uchar>();
-    for( ; itCur != im.end<uchar>(); ++itCur, ++itPrec, ++itErr) {
+    for( ; itPrec != im.end<uchar>(); ++itCur, ++itPrec, ++itErr) {
         *itErr = int(*itCur) - int(*itPrec);
     }
 }
@@ -21,7 +21,7 @@ void computeDisplayableErrorImage(const cv::Mat &im, const cv::Mat &imC, cv::Mat
     cv::MatConstIterator_<uchar> itPrec = im.begin<uchar>();
     cv::MatConstIterator_<uchar> itCur = imC.begin<uchar>();
     cv::MatIterator_<uchar> itErr = imErr.begin<uchar>();
-    for( ; itCur != imC.end<uchar>(); ++itCur, ++itPrec, ++itErr) {
+    for( ; itPrec != im.end<uchar>(); ++itCur, ++itPrec, ++itErr) {
         *itErr = std::min(255, std::max(0, int(*itCur) - int(*itPrec) + 128));
     }
 }
@@ -32,10 +32,10 @@ double computeMSE(const cv::Mat &im, const cv::Mat &imC)
     assert((im.type() == CV_8UC1) && (imC.type() == CV_8UC1));
     double MSE = 0.0;
 
-    cv::MatConstIterator_<uchar> it = im.begin<uchar>();
-    cv::MatConstIterator_<uchar> it2 = imC.begin<uchar>();
-    for( ; it != imC.end<uchar>(); ++it, ++it2) {
-        double value = (*it - *it2);
+    cv::MatConstIterator_<uchar> itPrec = im.begin<uchar>();
+    cv::MatConstIterator_<uchar> itCur = imC.begin<uchar>();
+    for( ; itPrec != im.end<uchar>(); ++itPrec, ++itCur) {
+        double value = (*itPrec - *itCur);
         MSE += value * value;
     }
 
@@ -60,8 +60,8 @@ double computeEntropy(const cv::Mat &im)
     assert(im.type() == CV_8UC1);
     double hist[256] = {0};
 
-    cv::MatConstIterator_<uchar> it;
-    for(it = im.begin<uchar>(); it != im.end<uchar>(); ++it) {
+    cv::MatConstIterator_<uchar> it = im.begin<uchar>();
+    for( ; it != im.end<uchar>(); ++it) {
         hist[int(*it)] += 1;
     }
 
