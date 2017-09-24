@@ -5,7 +5,7 @@ Pour pouvoir lire une vidéo, on utilise 'cv::VideoCapture'.
 <pre><code>cv::VideoCapture cap;
 cap.open(videoFilename);</code></pre>
 
-Les images d'OpenCV sont stockées dans des 'cv::Mat' et pour récupérer les frames d'un 'cv::VideoCapture', il suffit d'utiliser l'opérateur de flux '<<'.
+Les images d'OpenCV sont stockées dans des 'cv::Mat' et pour récupérer les frames d'un 'cv::VideoCapture', il suffit d'utiliser l'opérateur de flux '>>'.
 <pre><code>cv::Mat frameBGR;
 cap >> frameBGR;</code></pre>
 
