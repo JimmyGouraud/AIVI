@@ -6,14 +6,27 @@
 #include "limits.h"
 #include <iostream>
 
+
+//We want to traverse all blocks from the m1 image.
+//For each block b1 in m1, we search the block b2 in m2 image
+//such as computeMSE(b1, b2) is minimal.
+
+//To call computeMSE we will need to create a cv::Mat corresponding to each block.
+//You can for example use the rowRange()/colRange() methods of cv::Mat.
+
+//Suppose b1 is at position (x1, y1)
+// and the best b2 (that is the block that minimizes computeMSE(b1, b2)) is at (x2Best, y2Best)
+// then the motion vector is (x2Best-x1, y2Best-y1).
+//We can fill the motionVectors matrix with:
+// motionVectors.at<cv::Vec2i>(i, j) = cv::Vec2i(x2Best-x1, y2Best-y1);
 void blockMatchingMono(const cv::Mat &m1, const cv::Mat &m2,
 		       int blockSize,
 		       int windowSize,
 		       cv::Mat &motionVectors)
 {
   assert(m1.size() == m2.size()
-	 && m1.type() == m2.type()
-	 && m1.type() == CV_8UC1);
+	  && m1.type() == m2.type()
+	  && m1.type() == CV_8UC1);
   assert(blockSize > 0);
   assert(windowSize > 0);
 
@@ -23,46 +36,35 @@ void blockMatchingMono(const cv::Mat &m1, const cv::Mat &m2,
 
   motionVectors.create(blockYCount, blockXCount, CV_32SC2);
 
-  //We want to traverse all blocks from the m1 image.
-  //For each block b1 in m1, we search the block b2 in m2 image
-  //such as computeMSE(b1, b2) is minimal.
-
-  //To call computeMSE we will need to create a cv::Mat corresponding to each block.
-  //You can for example use the rowRange()/colRange() methods of cv::Mat.
-
-  //Suppose b1 is at position (x1, y1)
-  // and the best b2 (that is the block that minimizes computeMSE(b1, b2)) is at (x2Best, y2Best)
-  // then the motion vector is (x2Best-x1, y2Best-y1).
-  //We can fill the motionVectors matrix with:
-  // motionVectors.at<cv::Vec2i>(i, j) = cv::Vec2i(x2Best-x1, y2Best-y1);
-
-  int windowHalf = windowSize/2;
-  for (int b1_y = 0; b1_y < blockYCount; b1_y++) {
-	  for (int b1_x = 0; b1_x < blockXCount; b1_x++) {
+  int windowHalfSize = windowSize/2;
+  for (int y = 0; y < blockYCount; y++) {
+	  for (int x = 0; x < blockXCount; x++) {
 		  double minMSE = INT_MAX;
-		  int best_x = 0, best_y = 0;
+		  int best_b2_x = - windowHalfSize, best_b2_y = - windowHalfSize;
 
+		  int b1_x = x * blockSize, b1_y = y * blockSize;
 		  cv::Mat b1(m1, cv::Rect(b1_x, b1_y, blockSize, blockSize));
 
-		  for (int dy = - windowHalf; dy <= windowHalf; dy++) {
-			  for (int dx = - windowHalf; dx <= windowHalf; dx++) {
+		  for (int dy = - windowHalfSize; dy <= windowHalfSize; dy++) {
+			  for (int dx = - windowHalfSize; dx <= windowHalfSize; dx++) {
 				  int b2_x = b1_x + dx;
 				  int b2_y = b1_y + dy;
 
-				  if (b2_x < 0 || b2_x >= m2.cols ||
-					  b2_y < 0 || b2_y >= m2.rows) { continue; }
+				  if (b2_x < 0 || b2_x + blockSize >= m2.cols ||
+					  b2_y < 0 || b2_y + blockSize >= m2.rows) { continue; }
 
 				  cv::Mat b2(m2, cv::Rect(b2_x, b2_y, blockSize, blockSize));
-
 				  double MSE = computeMSE(b1, b2);
+
 				  if (minMSE > MSE) {
 					  minMSE = MSE;
-					  best_x = dx;
-					  best_y = dy;
+					  best_b2_x = b2_x;
+					  best_b2_y = b2_y;
 				  }
 			  }
 		  }
-		  motionVectors.at<cv::Vec2i>(b1_x, b1_y) = cv::Vec2i(best_x - b1_x, best_y - b1_y);
+
+		  motionVectors.at<cv::Vec2i>(y, x) = cv::Vec2i(best_b2_x - b1_x, best_b2_y - b1_y);
 	  }
   }
 }

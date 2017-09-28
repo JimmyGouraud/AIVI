@@ -67,9 +67,9 @@ main(int argc, char **argv)
         }
 
         //save frame
-        std::stringstream ss;
-        ss<<"frame_"<<std::setfill('0')<<std::setw(6)<<frameNumber<<".png";
-        cv::imwrite(ss.str(), frameBGR);
+        //std::stringstream ss;
+        //ss<<"frame_"<<std::setfill('0')<<std::setw(6)<<frameNumber<<".png";
+        //cv::imwrite(ss.str(), frameBGR);
 
         //convert from BGR to Y
         cv::Mat frameY;
@@ -82,23 +82,20 @@ main(int argc, char **argv)
             double MSE, PSNR, ENT, ENTe;
 
             if (nbLevels == 1) {
-
                 cv::Mat motionVectors;
                 blockMatchingMono(frameY, prevY, blockSize, windowSize, motionVectors);
                 cv::Mat YC;
                 computeCompensatedImage(motionVectors, prevY, YC);
+
+               //TODO: compute measures (& display images) ...
 
                 cv::Mat tmp = frameBGR.clone();
                 drawMVi(tmp, motionVectors);
                 imshow("tmp", tmp);
                 if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
 
-                //TODO: compute measures (& display images) ...
-
                 std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<"\n";
-            }
-            else {
-
+            } else {
                 std::vector<cv::Mat> levelsY;
                 std::vector<cv::Mat> levelsPrevY;
                 std::vector<cv::Mat> motionVectorsP;
