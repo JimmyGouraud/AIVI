@@ -6,7 +6,7 @@ IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE "Debug" CACHE STRING "CMAKE_BUILD_TYPE: Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." FORCE)
 ENDIF(NOT CMAKE_BUILD_TYPE)
 
-SET(TARGET "Lab2")
+SET(TARGET "lab2")
 
 SET(SRC lab2.cpp utils.hpp utils.cpp blockmatching.cpp blockmatching.hpp)
 
