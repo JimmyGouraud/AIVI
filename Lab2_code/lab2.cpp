@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <queue>
 #include <sstream>
+#include <fstream>
 
 
 #include <opencv2/highgui/highgui.hpp> //VideoCapture, imshow, imwrite, ...
@@ -60,12 +61,14 @@ main(int argc, char **argv)
         return -1;
     }
 
-    unsigned long frameNumber = 0;
-
     const size_t deltaT = interFramesDistance;
     std::queue<cv::Mat> previousFrames;
 
 
+    std::ofstream file_mse("../gnuplot/stats_mse.txt", std::ios::out | std::ios::trunc);
+    std::ofstream file_psnr("../gnuplot/stats_psnr.txt", std::ios::out | std::ios::trunc);
+    std::ofstream file_entropy("../gnuplot/stats_entropy.txt", std::ios::out | std::ios::trunc);
+    unsigned long frameNumber = 0;
     for ( ; ; ) {
 
         cv::Mat frameBGR;
@@ -87,25 +90,37 @@ main(int argc, char **argv)
             cv::Mat prevY = previousFrames.front();
             previousFrames.pop();
 
-            double MSE, PSNR, ENT, ENTe;
+            double MSE, PSNR, entropyCur, entropyErr;
 
             if (nbLevels == 1) {
-                cv::Mat motionVectors;
-                blockMatchingMono(frameY, prevY, blockSize, windowSize, motionVectors);
-                cv::Mat compY;
-                computeCompensatedImage(motionVectors, prevY, compY);
-                cv::Mat errY;
-                computeErrorImage(frameY, compY, errY);
+                cv::Mat motionVectors, compY, errY, err2Y;
 
+                if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
+
+                blockMatchingMono(frameY, prevY, blockSize, windowSize, motionVectors);
+                computeCompensatedImage(motionVectors, prevY, compY);
+                computeErrorImage(frameY, compY, errY);
+                computeErrorImage(frameY, prevY, err2Y);
+
+                MSE = computeMSE(compY, frameY);
+                PSNR = computePSNR(compY, frameY);
+                entropyCur = computeEntropy(frameY);
+                entropyErr = computeEntropy(errY);
+
+                
                 // Display results
                 cv::Mat mv = frameBGR.clone();
                 drawMVi(mv, motionVectors);
                 imshow("motionVectors", mv);
                 imshow("compY", compY);
                 imshow("errY", errY);
-                if (cv::waitKey(30) >= 0) { break; }
+                imshow("err2Y", err2Y);
+                
 
-                std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<"\n";
+                // Create file for gnuplot
+                file_mse     << frameNumber << " " << MSE  << '\n';
+                file_psnr    << frameNumber << " " << PSNR << '\n';
+                file_entropy << frameNumber << " " << entropyCur  << " " << entropyErr << '\n';
             } else {
                 std::vector<cv::Mat> levelsY;
                 std::vector<cv::Mat> levelsPrevY;
@@ -113,22 +128,24 @@ main(int argc, char **argv)
                 blockMatchingMulti(frameY, prevY, blockSize, windowSize, nbLevels, levelsY, levelsPrevY, motionVectorsP);
 
                 std::cout<<frameNumber;
-                for (int i=nbLevels-1; i>=0; --i) {
+                for (int i = nbLevels-1; i >= 0; --i) {
 
                     //TODO : compute measures  (& display images) ...
 
-                    std::cout<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe;
+                    //std::cout<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe;
                 }
                 std::cout<<"\n";
             }
-
-
         }
 
         previousFrames.push(frameY);
 
         ++frameNumber;
     }
+
+    file_mse.close();
+    file_psnr.close();
+    file_entropy.close();
 
     return EXIT_SUCCESS;
 }

@@ -35,9 +35,9 @@ computeErrorImage(const cv::Mat &im, const cv::Mat &imC, cv::Mat &imErr)
 
 double computeMSE(const cv::Mat &im, const cv::Mat &imC)
 {
-  assert(im.size() == imC.size()
-	 &&  im.type() == imC.type()
- 	 && imC.type() == CV_8UC1);
+  assert(im.size()  == imC.size()
+	 &&  im.type()  == imC.type()
+ 	 &&  imC.type() == CV_8UC1);
 
   long sum = 0;
 
