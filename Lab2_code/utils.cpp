@@ -1,33 +1,33 @@
 #include "utils.hpp"
+#include <iostream>
 
 #include <opencv2/imgproc/imgproc.hpp>
 
 void
 computeErrorImage(const cv::Mat &im, const cv::Mat &imC, cv::Mat &imErr)
 {
-  assert(im.size() == imC.size()
-	 && im.type() == imC.type()
-	 && imC.type() == CV_8UC1);
+    assert(im.size()  == imC.size()
+        && im.type()  == imC.type()
+        && imC.type() == CV_8UC1);
 
-  //We compute a displyable error image
-  //We keep pixel values in [0; 255]
+    //We compute a displyable error image
+    //We keep pixel values in [0; 255]
 
-  imErr.create(imC.rows, imC.cols, CV_8UC1); //nothing done if matrix already has the desired size
-  int rows = im.rows;
-  int cols = im.cols;
-  if (im.isContinuous() && imC.isContinuous() && imErr.isContinuous()) {
-    cols *= rows;
-    rows = 1;
-  }
-  for (int y = 0; y < rows; ++y) {
-    const unsigned char *p1 = im.ptr<unsigned char>(y);
-    const unsigned char *p2 = imC.ptr<unsigned char>(y);
-    unsigned char *pe = imErr.ptr<unsigned char>(y);
-    for(int x = 0; x < cols; ++x) {
-      pe[x] = cv::saturate_cast<unsigned char>(p1[x]-p2[x] + 128);
+    imErr.create(imC.rows, imC.cols, CV_8UC1); //nothing done if matrix already has the desired size
+    int rows = im.rows;
+    int cols = im.cols;
+    if (im.isContinuous() && imC.isContinuous() && imErr.isContinuous()) {
+        cols *= rows;
+        rows = 1;
     }
-  }
-
+    for (int y = 0; y < rows; ++y) {
+        const unsigned char *p1 = im.ptr<unsigned char>(y);
+        const unsigned char *p2 = imC.ptr<unsigned char>(y);
+        unsigned char *pe = imErr.ptr<unsigned char>(y);
+        for(int x = 0; x < cols; ++x) {
+            pe[x] = cv::saturate_cast<unsigned char>(p1[x]-p2[x] + 128);
+        }
+    }
 }
 
 
@@ -192,16 +192,28 @@ computeCompensatedImage(const cv::Mat &motionVectors,
 			const cv::Mat &prev,
 			cv::Mat &compensated)
 {
-
   assert(motionVectors.type() == CV_32SC2);
   assert(prev.type() == CV_8UC1);
 
   const int blockSize = prev.cols/motionVectors.cols;
+  compensated = prev.clone();
 
-  //TODO: fill compensated
+  for (int y = 0; y < motionVectors.rows; y++) {
+      int by = y * blockSize;
+      for (int x = 0; x < motionVectors.cols; x++) {
+          int bx = x * blockSize;
+          cv::Mat block(prev, cv::Rect(bx, by, blockSize, blockSize));
+          cv::Vec2i mv = motionVectors.at<cv::Vec2i>(y, x);
 
-  //You can use rowRange/colRange to get blocks of images
-  // and copyTo to copy these blocks
-
-
+          for (int y1 = 0; y1 < blockSize; y1++) {
+              int cy = by - mv(1) + y1;
+              if (cy < 0 || cy >= compensated.rows) { continue; }
+              for (int x1 = 0; x1 < blockSize; x1++) {
+                  int cx = bx - mv(0) + x1;
+                  if (cx < 0 || cx >= compensated.cols) { continue; }
+                  compensated.at<uchar>(cy, cx) = block.at<uchar>(y1, x1);
+              }
+          }
+      }
+  }
 }

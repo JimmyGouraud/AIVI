@@ -22,8 +22,8 @@
 int
 main(int argc, char **argv)
 {
-    if(argc != 4) {
-        std::cerr << "Usage: " << argv[0] << " video-filename distance-between-two-frames-for-prediction nbLevels" << std::endl;
+    if(argc != 6) {
+        std::cerr << "Usage: " << argv[0] << " video-filename distance-between-two-frames-for-prediction nbLevels blockSize windowSize" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -37,13 +37,21 @@ main(int argc, char **argv)
 
     const int nbLevels = atoi(argv[3]);
     if (nbLevels <= 0 || nbLevels>4) {
-        std::cerr<<"Error: nbLevels must be a strictly positive integer"<<std::endl;
+        std::cerr<<"Error: nbLevels must be between [0;4]"<<std::endl;
         return EXIT_FAILURE;
     }
 
-    const int blockSize = 8;
-    const int windowSize = 32;
-    //TODO: it would be better to pass these values as parameters
+    const int blockSize = atoi(argv[4]);
+    if (blockSize <= 0) {
+        std::cerr << "Error: blockSize must be a strictly positive integer" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    const int windowSize = atoi(argv[5]);
+    if(windowSize <= 0) {
+        std::cerr << "Error: windowSize must be a strictly positive integer" << std::endl;
+        return EXIT_FAILURE;
+    }
 
     cv::VideoCapture cap;
     cap.open(videoFilename);
@@ -84,15 +92,18 @@ main(int argc, char **argv)
             if (nbLevels == 1) {
                 cv::Mat motionVectors;
                 blockMatchingMono(frameY, prevY, blockSize, windowSize, motionVectors);
-                cv::Mat YC;
-                computeCompensatedImage(motionVectors, prevY, YC);
+                cv::Mat compY;
+                computeCompensatedImage(motionVectors, prevY, compY);
+                cv::Mat errY;
+                computeErrorImage(frameY, compY, errY);
 
-               //TODO: compute measures (& display images) ...
-
-                cv::Mat tmp = frameBGR.clone();
-                drawMVi(tmp, motionVectors);
-                imshow("tmp", tmp);
-                if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
+                // Display results
+                cv::Mat mv = frameBGR.clone();
+                drawMVi(mv, motionVectors);
+                imshow("motionVectors", mv);
+                imshow("compY", compY);
+                imshow("errY", errY);
+                if (cv::waitKey(30) >= 0) { break; }
 
                 std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<"\n";
             } else {

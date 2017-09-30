@@ -140,5 +140,4 @@ void blockMatchingMulti(const cv::Mat &m1, const cv::Mat &m2,
       up(motionVectors[i], motionVectors[i-1]);
     }
   }
-
 }
