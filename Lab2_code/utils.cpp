@@ -202,14 +202,14 @@ computeCompensatedImage(const cv::Mat &motionVectors,
       int by = y * blockSize;
       for (int x = 0; x < motionVectors.cols; x++) {
           int bx = x * blockSize;
-          cv::Mat block(prev, cv::Rect(bx, by, blockSize, blockSize));
           cv::Vec2i mv = motionVectors.at<cv::Vec2i>(y, x);
+          cv::Mat block(prev, cv::Rect(bx + mv(0), by + mv(1), blockSize, blockSize));
 
           for (int y1 = 0; y1 < blockSize; y1++) {
-              int cy = by - mv(1) + y1;
+              int cy = by + y1;
               if (cy < 0 || cy >= compensated.rows) { continue; }
               for (int x1 = 0; x1 < blockSize; x1++) {
-                  int cx = bx - mv(0) + x1;
+                  int cx = bx + x1;
                   if (cx < 0 || cx >= compensated.cols) { continue; }
                   compensated.at<uchar>(cy, cx) = block.at<uchar>(y1, x1);
               }
