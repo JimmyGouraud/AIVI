@@ -15,7 +15,7 @@ Nous avons calculé, à l'aide de l'image précédentes et des vecteurs de mouve
     <figcaption style="text-align:center">Figure 1 - MSE (entre Current Image et Compensated Image)</figcaption>
 </figure>
 
-Le PSNR entre l'image compensée et l'image actuelle (figure 2) montre des valeurs entre 20 et 25.
+La PSNR entre l'image compensée et l'image actuelle (figure 2) montre des valeurs entre 20 et 25. La PSNR ici n'est pas représentative car on la fait sur deux images qui sont censé être les mêmes.
 <figure>
     <img src="image/psnr_compensated_10_1_8_32.png" width="350" alt="Figure 2 - PSNR (entre Current Image et Compensated Image)"/>
     <figcaption style="text-align:center">Figure 2 - PSNR (entre Current Image et Compensated Image)</figcaption>
@@ -25,4 +25,20 @@ L'entropie de l'image actuelle est aux alentours de 7.8 tandis que l'image d'err
 <figure>
     <img src="image/entropy_compensated_10_1_8_32.png" width="350" alt="Figure 3 - Entropy (entre Current Image et Error Compensated Image)"/>
     <figcaption style="text-align:center">Figure 3 - Entropy (entre Current Image et Error Compensated Image)</figcaption>
+</figure>
+
+Voici les images des vecteurs de mouvements, de l'image compensée et de l'image d'erreur compensée.
+<figure>
+    <img src="image/motion_vector_10_1_8_32.png" alt="Figure 4 - Motion Vectors"/>
+    <figcaption style="text-align:center">Figure 4 - Motion Vectors</figcaption>
+</figure>
+
+<figure>
+    <img src="image/compensated_error_image_10_1_8_32.png" width="350" alt="Figure 5 - Image d'erreur compensée"/>
+    <figcaption style="text-align:center">Figure 5 - Image d'erreur compensée</figcaption>
+</figure>
+
+<figure>
+    <img src="image/compensated_image_10_1_8_32.png" width="350" alt="Figure 5 - Image compensée"/>
+    <figcaption style="text-align:center">Figure 6 - Image compensée</figcaption>
 </figure>
