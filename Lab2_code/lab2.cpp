@@ -107,7 +107,6 @@ main(int argc, char **argv)
                 entropyCur = computeEntropy(frameY);
                 entropyErr = computeEntropy(errY);
 
-                
                 // Display results
                 cv::Mat mv = frameBGR.clone();
                 drawMVi(mv, motionVectors);
@@ -115,13 +114,14 @@ main(int argc, char **argv)
                 imshow("compY", compY);
                 imshow("errY", errY);
                 imshow("err2Y", err2Y);
-                
 
                 // Create file for gnuplot
                 file_mse     << frameNumber << " " << MSE  << '\n';
                 file_psnr    << frameNumber << " " << PSNR << '\n';
                 file_entropy << frameNumber << " " << entropyCur  << " " << entropyErr << '\n';
             } else {
+                if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
+
                 std::vector<cv::Mat> levelsY;
                 std::vector<cv::Mat> levelsPrevY;
                 std::vector<cv::Mat> motionVectorsP;
@@ -129,11 +129,30 @@ main(int argc, char **argv)
 
                 std::cout<<frameNumber;
                 for (int i = nbLevels-1; i >= 0; --i) {
+                    /*
+                    cv::Mat compY, errY;
+                    computeCompensatedImage(motionVectorsP[i], levelsPrevY[], compY);
+                    computeErrorImage(frameY, compY, errY);
 
-                    //TODO : compute measures  (& display images) ...
-
-                    //std::cout<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe;
+                    // Display results
+                    cv::Mat mv = frameBGR.clone();
+                    drawMVi(mv, motionVectorsP[i]);
+                    imshow("motionVectors", mv);
+                    imshow("compY", compY);
+                    imshow("errY", errY);
+                    */
                 }
+
+                cv::Mat compY, errY;
+                std::cerr << "motionVectorsP : " << motionVectorsP[0] << '\n';
+                computeCompensatedImage(motionVectorsP[0], prevY, compY);
+
+                // Display results
+                cv::Mat mv = frameBGR.clone();
+                drawMVi(mv, motionVectorsP[0]);
+                imshow("motionVectors", mv);
+                imshow("compY", compY);
+
                 std::cout<<"\n";
             }
         }
