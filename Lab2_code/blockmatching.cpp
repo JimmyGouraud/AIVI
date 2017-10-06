@@ -19,60 +19,11 @@
 // then the motion vector is (x2Best-x1, y2Best-y1).
 //We can fill the motionVectors matrix with:
 // motionVectors.at<cv::Vec2i>(i, j) = cv::Vec2i(x2Best-x1, y2Best-y1);
-void blockMatchingMono(const cv::Mat &m1, const cv::Mat &m2,
-		       int blockSize,
-		       int windowSize,
-		       cv::Mat &motionVectors)
-{
-  assert(m1.size() == m2.size()
-	  && m1.type() == m2.type()
-	  && m1.type() == CV_8UC1);
-  assert(blockSize > 0);
-  assert(windowSize > 0);
-
-  //Here we suppose that m1.cols & m1.rows are multiple of blockSize
-  const int blockXCount = m1.cols / blockSize;
-  const int blockYCount = m1.rows / blockSize;
-
-  motionVectors.create(blockYCount, blockXCount, CV_32SC2);
-
-  int windowHalfSize = windowSize/2;
-  for (int y = 0; y < blockYCount; y++) {
-	  for (int x = 0; x < blockXCount; x++) {
-		  double minMSE = INT_MAX;
-		  int b1_x = x * blockSize, b1_y = y * blockSize;
-		  int best_b2_x = - windowHalfSize, best_b2_y = - windowHalfSize;
-		  cv::Mat b1(m1, cv::Rect(b1_x, b1_y, blockSize, blockSize));
-
-		  for (int dy = - windowHalfSize; dy <= windowHalfSize; dy++) {
-			  int b2_y = b1_y + dy;
-			  if (b2_y < 0 || b2_y + blockSize >= m2.rows) { continue; }
-
-			  for (int dx = - windowHalfSize; dx <= windowHalfSize; dx++) {
-				  int b2_x = b1_x + dx;
-				  if (b2_x < 0 || b2_x + blockSize >= m2.cols) { continue; }
-
-				  cv::Mat b2(m2, cv::Rect(b2_x, b2_y, blockSize, blockSize));
-				  double MSE = computeMSE(b1, b2);
-
-				  if (minMSE > MSE) {
-					  minMSE = MSE;
-					  best_b2_x = b2_x;
-					  best_b2_y = b2_y;
-				  }
-			  }
-		  }
-
-		  motionVectors.at<cv::Vec2i>(y, x) = cv::Vec2i(best_b2_x - b1_x, best_b2_y - b1_y);
-	  }
-  }
-}
-
 
 //Helper function for blockMatchingMulti
 //Here motion vectors are used both as an input and an output.
 //If they are non empty, then they are used to initialize block b2 search window position.
-void blockMatchingMono2(const cv::Mat &m1, const cv::Mat &m2,
+void blockMatchingMono(const cv::Mat &m1, const cv::Mat &m2,
 			int blockSize,
 			int windowSize,
 			cv::Mat &motionVectors)
@@ -87,7 +38,6 @@ void blockMatchingMono2(const cv::Mat &m1, const cv::Mat &m2,
 	const int blockXCount = m1.cols / blockSize;
 	const int blockYCount = m1.rows / blockSize;
 
-
 	bool first = motionVectors.empty();
 	motionVectors.create(blockYCount, blockXCount, CV_32SC2);
 
@@ -96,20 +46,17 @@ void blockMatchingMono2(const cv::Mat &m1, const cv::Mat &m2,
 		for (int x = 0; x < blockXCount; x++) {
 			double minMSE = INT_MAX;
 			int b1_x = x * blockSize, b1_y = y * blockSize;
-			if (!first) {
-				b1_x += motionVectors.at<cv::Vec2i>(y, x)[0];
-				b1_y += motionVectors.at<cv::Vec2i>(y, x)[1];
-			}
-
-			int best_b2_x = - windowHalfSize, best_b2_y = - windowHalfSize;
 			cv::Mat b1(m1, cv::Rect(b1_x, b1_y, blockSize, blockSize));
 
+			int best_b2_x = - windowHalfSize, best_b2_y = - windowHalfSize;
 			for (int dy = - windowHalfSize; dy <= windowHalfSize; dy++) {
 				int b2_y = b1_y + dy;
+				if (!first) { b2_y += motionVectors.at<cv::Vec2i>(y, x)[1]; }
 				if (b2_y < 0 || b2_y + blockSize >= m2.rows) { continue; }
 
 				for (int dx = - windowHalfSize; dx <= windowHalfSize; dx++) {
 					int b2_x = b1_x + dx;
+					if (!first) { b2_x += motionVectors.at<cv::Vec2i>(y, x)[0]; }
 					if (b2_x < 0 || b2_x + blockSize >= m2.cols) { continue; }
 
 					cv::Mat b2(m2, cv::Rect(b2_x, b2_y, blockSize, blockSize));
@@ -167,7 +114,7 @@ void blockMatchingMulti(const cv::Mat &m1, const cv::Mat &m2,
   }
 
   for (int i = nbLevels-1; i >= 0; i--) {
-    blockMatchingMono2(levels1[i], levels2[i], blockSizes[i], windowSize, motionVectors[i]);
+    blockMatchingMono(levels1[i], levels2[i], blockSizes[i], windowSize, motionVectors[i]);
     if (i > 0) { up(motionVectors[i], motionVectors[i-1]); }
   }
 }

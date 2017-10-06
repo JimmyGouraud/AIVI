@@ -77,11 +77,6 @@ main(int argc, char **argv)
             break;
         }
 
-        //save frame
-        //std::stringstream ss;
-        //ss<<"frame_"<<std::setfill('0')<<std::setw(6)<<frameNumber<<".png";
-        //cv::imwrite(ss.str(), frameBGR);
-
         //convert from BGR to Y
         cv::Mat frameY;
         cv::cvtColor(frameBGR, frameY, CV_BGR2GRAY);
@@ -90,71 +85,39 @@ main(int argc, char **argv)
             cv::Mat prevY = previousFrames.front();
             previousFrames.pop();
 
+            if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
+
             double MSE, PSNR, entropyCur, entropyErr;
+            std::vector<cv::Mat> levelsY;
+            std::vector<cv::Mat> levelsPrevY;
+            std::vector<cv::Mat> levelsCompY(nbLevels);
+            std::vector<cv::Mat> levelsErrY(nbLevels);
+            std::vector<cv::Mat> motionVectorsP;
 
-            if (nbLevels == 1) {
-                cv::Mat motionVectors, compY, errY, err2Y;
+            blockMatchingMulti(frameY, prevY, blockSize, windowSize, nbLevels, levelsY, levelsPrevY, motionVectorsP);
 
-                if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
+            std::cout << frameNumber << "\n";
 
-                blockMatchingMono(frameY, prevY, blockSize, windowSize, motionVectors);
-                computeCompensatedImage(motionVectors, prevY, compY);
-                computeErrorImage(frameY, compY, errY);
-                computeErrorImage(frameY, prevY, err2Y);
-
-                MSE = computeMSE(compY, frameY);
-                PSNR = computePSNR(compY, frameY);
-                entropyCur = computeEntropy(frameY);
-                entropyErr = computeEntropy(errY);
+            for (int i = nbLevels-1; i >= 0; --i) {
+                computeCompensatedImage(motionVectorsP[i], levelsPrevY[i], levelsCompY[i]);
+                computeErrorImage(levelsY[i], levelsCompY[i], levelsErrY[i]);
 
                 // Display results
-                cv::Mat mv = frameBGR.clone();
-                drawMVi(mv, motionVectors);
-                imshow("motionVectors", mv);
-                imshow("compY", compY);
-                imshow("errY", errY);
-                imshow("err2Y", err2Y);
-
-                // Create file for gnuplot
-                file_mse     << frameNumber << " " << MSE  << '\n';
-                file_psnr    << frameNumber << " " << PSNR << '\n';
-                file_entropy << frameNumber << " " << entropyCur  << " " << entropyErr << '\n';
-            } else {
-                if (cv::waitKey(30) >= 0) { break; } // Permet l'affichage des images
-
-                std::vector<cv::Mat> levelsY;
-                std::vector<cv::Mat> levelsPrevY;
-                std::vector<cv::Mat> motionVectorsP;
-                blockMatchingMulti(frameY, prevY, blockSize, windowSize, nbLevels, levelsY, levelsPrevY, motionVectorsP);
-
-                std::cout<<frameNumber;
-                for (int i = nbLevels-1; i >= 0; --i) {
-                    /*
-                    cv::Mat compY, errY;
-                    computeCompensatedImage(motionVectorsP[i], levelsPrevY[], compY);
-                    computeErrorImage(frameY, compY, errY);
-
-                    // Display results
-                    cv::Mat mv = frameBGR.clone();
-                    drawMVi(mv, motionVectorsP[i]);
-                    imshow("motionVectors", mv);
-                    imshow("compY", compY);
-                    imshow("errY", errY);
-                    */
-                }
-
-                cv::Mat compY, errY;
-                std::cerr << "motionVectorsP : " << motionVectorsP[0] << '\n';
-                computeCompensatedImage(motionVectorsP[0], prevY, compY);
-
-                // Display results
-                cv::Mat mv = frameBGR.clone();
-                drawMVi(mv, motionVectorsP[0]);
-                imshow("motionVectors", mv);
-                imshow("compY", compY);
-
-                std::cout<<"\n";
+                //cv::Mat mv = frameBGR.clone();
+                //drawMVi(mv, motionVectorsP[i]);
+                //imshow("motionVectors"+i, mv);
+                //imshow("compY"+i, levelsCompY[i]);
+                //imshow("errY"+i, levelsErrY[i]);
             }
+
+            // Create file for gnuplot
+            MSE = computeMSE(levelsCompY[nbLevels-1], levelsY[nbLevels-1]);
+            PSNR = computePSNR(levelsCompY[nbLevels-1], levelsY[nbLevels-1]);
+            entropyCur = computeEntropy(levelsY[nbLevels-1]);
+            entropyErr = computeEntropy(levelsErrY[nbLevels-1]);
+            file_mse     << frameNumber << " " << MSE  << '\n';
+            file_psnr    << frameNumber << " " << PSNR << '\n';
+            file_entropy << frameNumber << " " << entropyCur  << " " << entropyErr << '\n';
         }
 
         previousFrames.push(frameY);

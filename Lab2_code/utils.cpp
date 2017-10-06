@@ -195,9 +195,8 @@ computeCompensatedImage(const cv::Mat &motionVectors,
     assert(motionVectors.type() == CV_32SC2);
     assert(prev.type() == CV_8UC1);
 
-    compensated = prev.clone();
+    compensated.create(prev.rows, prev.cols, CV_8UC1);
     const int blockSize = prev.cols/motionVectors.cols;
-
     for (int y = 0; y < motionVectors.rows; y++) {
         int by = y * blockSize;
         for (int x = 0; x < motionVectors.cols; x++) {
