@@ -17,4 +17,4 @@ set ytics 50
 set style line 1 lw 5
 set style line 2 lw 5
 
-plot 'stats_mse_1.txt' using 1:2 with lines title 'MSE lvl 1', 'stats_mse_2.txt' using 1:2 with lines title 'MSE lvl 2', 'stats_mse_3.txt' using 1:2 with lines title 'MSE lvl 3'
+plot 'stats_mse.txt' using 1:2 with lines title 'MSE lvl 3', 'stats_mse.txt' using 1:3 with lines title 'MSE lvl 2', 'stats_mse.txt' using 1:4 with lines title 'MSE lvl 1'

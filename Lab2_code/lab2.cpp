@@ -98,30 +98,36 @@ main(int argc, char **argv)
 
             std::cout << frameNumber << "\n";
 
+            entropyCur = computeEntropy(frameY);
+            file_mse     << frameNumber;
+            file_psnr    << frameNumber;
+            file_entropy << frameNumber << " " << entropyCur;
             for (int i = nbLevels-1; i >= 0; --i) {
-                computeCompensatedImage(motionVectorsP[i], levelsPrevY[i], levelsCompY[i]);
-                computeErrorImage(levelsY[i], levelsCompY[i], levelsErrY[i]);
+                computeCompensatedImage(motionVectorsP[i], prevY, levelsCompY[i]);
+                computeErrorImage(frameY, levelsCompY[i], levelsErrY[i]);
+
+                // Create file for gnuplot
+                MSE = computeMSE(levelsCompY[i], frameY);
+                PSNR = computePSNR(levelsCompY[i], frameY);
+                entropyErr = computeEntropy(levelsErrY[i]);
+                file_mse     << " " << MSE;
+                file_psnr    << " " << PSNR;
+                file_entropy << " " << entropyErr;
 
                 // Display results
                 //cv::Mat mv = frameBGR.clone();
                 //drawMVi(mv, motionVectorsP[i]);
-                //imshow("motionVectors"+i, mv);
-                //imshow("compY"+i, levelsCompY[i]);
-                //imshow("errY"+i, levelsErrY[i]);
+                //imshow("motionVectors"+std::to_string(i), mv);
+                //imshow("compY"+std::to_string(i), levelsCompY[i]);
+                //imshow("errY"+std::to_string(i), levelsErrY[i]);
             }
 
-            // Create file for gnuplot
-            MSE = computeMSE(levelsCompY[nbLevels-1], levelsY[nbLevels-1]);
-            PSNR = computePSNR(levelsCompY[nbLevels-1], levelsY[nbLevels-1]);
-            entropyCur = computeEntropy(levelsY[nbLevels-1]);
-            entropyErr = computeEntropy(levelsErrY[nbLevels-1]);
-            file_mse     << frameNumber << " " << MSE  << '\n';
-            file_psnr    << frameNumber << " " << PSNR << '\n';
-            file_entropy << frameNumber << " " << entropyCur  << " " << entropyErr << '\n';
+            file_mse     << '\n';
+            file_psnr    << '\n';
+            file_entropy << '\n';
         }
 
         previousFrames.push(frameY);
-
         ++frameNumber;
     }
 

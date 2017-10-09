@@ -19,4 +19,4 @@ set ytics 5
 set style line 1 lw 5
 set style line 2 lw 5
 
-plot 'stats_psnr_1.txt' using 1:2 with lines title 'PSNR lvl 1', 'stats_psnr_2.txt' using 1:2 with lines title 'PSNR lvl 2', 'stats_psnr_3.txt' using 1:2 with lines title 'PSNR lvl 3'
+plot 'stats_psnr.txt' using 1:2 with lines title 'PSNR lvl 3', 'stats_psnr.txt' using 1:3 with lines title 'PSNR lvl 2', 'stats_psnr.txt' using 1:4 with lines title 'PSNR lvl 1'
