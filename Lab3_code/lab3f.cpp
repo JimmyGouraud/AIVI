@@ -54,7 +54,7 @@ main(int argc, char **argv)
   unsigned long frameNumber = 0;
 
   const size_t deltaT = interFramesDistance;
-  std::queue<cv::Mat> previousFrames;  
+  std::queue<cv::Mat> previousFrames;
 
   for ( ; ; ) {
 
@@ -70,7 +70,7 @@ main(int argc, char **argv)
     ss<<"frame_"<<std::setfill('0')<<std::setw(6)<<frameNumber<<".png";
     cv::imwrite(ss.str(), frameBGR);
 #endif //SAVE_FRAME
-    
+
     //convert from BGR to Y
     cv::Mat frameY;
     cv::cvtColor(frameBGR, frameY, CV_BGR2GRAY);
@@ -88,35 +88,35 @@ main(int argc, char **argv)
       const double poly_sigma = 1.2; //1.1;
       const double pyr_scale = 0.5;
       const int flags = cv::OPTFLOW_FARNEBACK_GAUSSIAN;
-      
-      //TODO: call calcOpticalFlowFarneback()
-        
+
+      calcOpticalFlowFarneback(frameY, prevY, motionVectors, pyr_scale, levels, winSize, nbIter, poly_n, poly_sigma, flags);
       cv::Mat YC;
-      //TODO: compute compensated image YC
-	
+      computeCompensatedImageF(motionVectors, prevY, YC);
+
 #if DISPLAY
       cv::Mat imgMV = frameY.clone();
-      //TODO: draw motion vectors 
+      drawMVf(imgMV, motionVectors, 20);
+
       cv::imshow("MVs", imgMV);
       cv::waitKey(10);
 #endif //DISPLAY
-	
+
       cv::Mat imErr0;
       computeErrorImage(frameY, prevY, imErr0);
-      
+
       cv::Mat imErr;
       computeErrorImage(frameY, YC, imErr);
-      
+
       const double MSE = computeMSE(frameY, YC);
       const double PSNR = computePSNR(MSE);
       const double ENT = computeEntropy(frameY);
       const double ENTe = computeEntropy(imErr);
-      
+
       std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<std::endl;
     }
 
-    previousFrames.push(frameY);    
-      
+    previousFrames.push(frameY);
+
     ++frameNumber;
   }
 
