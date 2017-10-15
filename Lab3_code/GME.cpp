@@ -25,11 +25,16 @@ computeGME(const cv::Mat &motionVectors,
   // pass from a matrix of size rows x cols to a matrix of size 1 x rows*cols.
   //Here you would call: reshape(0, 1);
 
+  // /!\ i et j défini par rapport au centre ! donc faire i - center; j - center
+  motionVectorsGlobal.create(motionVectors.rows, motionVectors.cols, CV_32FC2);
+  motionVectorsGlobal.reshape(0,1);
+  cv::findHomography(motionVectors, motionVectorsGlobal, CV_RANSAC);
+  cv::perspectiveTransform();
 
-  
-  assert(motionVectorsGlobal.type() == CV_32FC2);  
+
+  assert(motionVectorsGlobal.type() == CV_32FC2);
 }
-  
+
 void
 computeGlobalMotionError(const cv::Mat &motionVectors,
 			 const cv::Mat &motionVectorsGlobal,
@@ -39,7 +44,7 @@ computeGlobalMotionError(const cv::Mat &motionVectors,
   assert(motionVectorsGlobal.type() == CV_32FC2);
 
   motionError.create(motionVectors.rows, motionVectors.cols, CV_32F);
-  
+
   //TODO: compute the error between actual motion vectors and estimated global motion vectors
 
 
