@@ -23,6 +23,9 @@
 //Helper function for blockMatchingMulti
 //Here motion vectors are used both as an input and an output.
 //If they are non empty, then they are used to initialize block b2 search window position.
+
+// m1 = frameY, m2 = prevY
+// frameY = prevY + motionVectors;
 void blockMatchingMono(const cv::Mat &m1, const cv::Mat &m2,
 			int blockSize,
 			int windowSize,

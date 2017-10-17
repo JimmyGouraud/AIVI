@@ -26,10 +26,18 @@ computeGME(const cv::Mat &motionVectors,
   //Here you would call: reshape(0, 1);
 
   // /!\ i et j défini par rapport au centre ! donc faire i - center; j - center
+
+  std::vector<cv::Point2f> srcPoints, dstPoints;
+  for (int i = 0; i < motionVectors.rows; i++) {
+	  for (int j = 0; j < motionVectors.cols; j++) {
+		  srcPoints.push_back(cv::Point2f(i,j));
+		  dstPoints.push_back(srcPoints.back() + motionVectors.at<cv::Point2f>(i*motionVectors.cols + j));
+	  }
+  }
+  cv::Mat homography = cv::findHomography(srcPoints, dstPoints, CV_RANSAC);
+
   motionVectorsGlobal.create(motionVectors.rows, motionVectors.cols, CV_32FC2);
-  motionVectorsGlobal.reshape(0,1);
-  cv::findHomography(motionVectors, motionVectorsGlobal, CV_RANSAC);
-  cv::perspectiveTransform();
+  cv::perspectiveTransform(motionVectors, motionVectorsGlobal, homography);
 
 
   assert(motionVectorsGlobal.type() == CV_32FC2);
