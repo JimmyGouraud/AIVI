@@ -30,8 +30,8 @@ computeGME(const cv::Mat &motionVectors,
   std::vector<cv::Point2f> srcPoints, dstPoints;
   for (int i = 0; i < motionVectors.rows; i++) {
 	  for (int j = 0; j < motionVectors.cols; j++) {
-		  srcPoints.push_back(cv::Point2f(i,j));
-		  dstPoints.push_back(srcPoints.back() + motionVectors.at<cv::Point2f>(i*motionVectors.cols + j));
+		  srcPoints.push_back(cv::Point2f(i,j)); // TODO: recentrer?
+		  dstPoints.push_back(srcPoints.back() + cv::Point2f(motionVectors.at<cv::Vec2f>(i,j)));
 	  }
   }
   cv::Mat homography = cv::findHomography(srcPoints, dstPoints, CV_RANSAC);
@@ -39,6 +39,25 @@ computeGME(const cv::Mat &motionVectors,
   motionVectorsGlobal.create(motionVectors.rows, motionVectors.cols, CV_32FC2);
   cv::perspectiveTransform(motionVectors, motionVectorsGlobal, homography);
 
+  cv::Mat energy(motionVectors.rows, motionVectors.cols, CV_32FC1);
+  float maxEnergy = 0;
+  for (int i = 0; i < motionVectors.rows; i++) {
+	  for (int j = 0; j < motionVectors.cols; j++) {
+		  float x = (motionVectors.at<cv::Vec2f>(i,j)[0] - motionVectorsGlobal.at<cv::Vec2f>(i,j)[0]);
+		  float y = (motionVectors.at<cv::Vec2f>(i,j)[1] - motionVectorsGlobal.at<cv::Vec2f>(i,j)[1]);
+		  energy.at<float>(i,j) = sqrt(x*x + y*y); // distance L2
+		  if (energy.at<float>(i,j) > max) {
+			  maxEnergy = energy.at<float>(i,j);
+		  }
+	  }
+  }
+
+  // On normalize
+  for (int i = 0; i < motionVectors.rows; i++) {
+	  for (int j = 0; j < motionVectors.cols; j++) {
+		  energy.at<float>(i,j) /= maxEnergy;
+	  }
+  }
 
   assert(motionVectorsGlobal.type() == CV_32FC2);
 }
