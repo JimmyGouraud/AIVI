@@ -22,7 +22,7 @@
 #include "motionEstimation.hpp"
 #include "GME.hpp"
 
-#define DISPLAY 0
+#define DISPLAY 1
 #define SAVE_FRAME 0
 
 int
