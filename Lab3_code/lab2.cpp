@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <queue>
 #include <sstream>
+#include <fstream>
 
 
 #include <opencv2/highgui/highgui.hpp> //VideoCapture, imshow, imwrite, ...
@@ -55,7 +56,8 @@ main(int argc, char **argv)
   unsigned long frameNumber = 0;
 
   const size_t deltaT = interFramesDistance;
-  std::queue<cv::Mat> previousFrames;  
+  std::queue<cv::Mat> previousFrames;
+  std::ofstream file_mse("../gnuplot/bm.txt", std::ios::out | std::ios::trunc);
 
 
   for ( ; ; ) {
@@ -72,7 +74,7 @@ main(int argc, char **argv)
     ss<<"frame_"<<std::setfill('0')<<std::setw(6)<<frameNumber<<".png";
     cv::imwrite(ss.str(), frameBGR);
     */
-    
+
     //convert from BGR to Y
     cv::Mat frameY;
     cv::cvtColor(frameBGR, frameY, CV_BGR2GRAY);
@@ -87,81 +89,85 @@ main(int argc, char **argv)
 	blockMatchingMono(frameY, prevY, blockSize, windowSize, motionVectors);
 	cv::Mat YC;
 	computeCompensatedImage(motionVectors, prevY, YC);
-	
+
 #if DISPLAY
 	cv::Mat imgMV = frameY.clone();
 	drawMVi(imgMV, motionVectors);
-	
+
 	cv::imshow("MVs", imgMV);
 	cv::waitKey(10);
 #endif //DISPLAY
-	
+
 	//TODO: FD ???????
-	
+
 	cv::Mat imErr0;
 	computeErrorImage(frameY, prevY, imErr0);
-	
+
 	cv::Mat imErr;
 	computeErrorImage(frameY, YC, imErr);
-	
+
 	const double MSE = computeMSE(frameY, YC);
 	const double PSNR = computePSNR(MSE);
 	const double ENT = computeEntropy(frameY);
 	const double ENTe = computeEntropy(imErr);
-	
-	std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<std::endl;
+
+	//std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<std::endl;
+    file_mse << " " << MSE << " " << PSNR << " " << ENT << " " << ENTe << std::endl;
+
       }
       else {
-	
+
 	std::vector<cv::Mat> levelsY;
 	std::vector<cv::Mat> levelsPrevY;
 	std::vector<cv::Mat> motionVectorsP;
 	blockMatchingMulti(frameY, prevY, blockSize, windowSize, nbLevels, levelsY, levelsPrevY, motionVectorsP);
 
-	//TODO : compute measures ... 
+	//TODO : compute measures ...
 
 	std::cout<<frameNumber;
 	for (int i=nbLevels-1; i>=0; --i) {
 	  const cv::Mat &motionVectors = motionVectorsP[i];
 	  const cv::Mat &prevY = levelsPrevY[i];
 	  const cv::Mat &frameY = levelsY[i];
-	  
+
 	  cv::Mat YC;
 	  computeCompensatedImage(motionVectors, prevY, YC);
 
 #if DISPLAY
 	  cv::Mat imgMV = frameY.clone();
 	  drawMVi(imgMV, motionVectors);
-	  
+
 	  cv::imshow(std::string("MVs")+std::to_string(i), imgMV);
 	  cv::waitKey(10);
 #endif //DISPLAY
-	  
+
 	  //TODO: FD ???????
-	  
+
 	  cv::Mat imErr0;
 	  computeErrorImage(frameY, prevY, imErr0);
-	  
+
 	  cv::Mat imErr;
 	  computeErrorImage(frameY, YC, imErr);
-	  
+
 	  const double MSE = computeMSE(frameY, YC);
 	  const double PSNR = computePSNR(MSE);
 	  const double ENT = computeEntropy(frameY);
 	  const double ENTe = computeEntropy(imErr);
-	  
-	  std::cout<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe;
+
+	  //std::cout<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe;
+      if (i == 0) { file_mse << frameNumber << " " << MSE << " " << PSNR << " " << ENT << " " << ENTe << std::endl; }
 	}
-	std::cout<<std::endl;
+	//std::cout<<std::endl;
       }
-	
-      
+
+
     }
 
-    previousFrames.push(frameY);    
-      
+    previousFrames.push(frameY);
+
     ++frameNumber;
   }
+  file_mse.close();
 
   return EXIT_SUCCESS;
 }

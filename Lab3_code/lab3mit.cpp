@@ -11,7 +11,7 @@
 #include <iomanip>
 #include <queue>
 #include <sstream>
-
+#include <fstream>
 
 #include <opencv2/highgui/highgui.hpp> //VideoCapture, imshow, imwrite, ...
 #include <opencv2/imgproc/imgproc.hpp> //cvtColor
@@ -19,7 +19,7 @@
 #include "utils.hpp"
 #include "motionEstimation.hpp"
 
-#define DISPLAY 1
+#define DISPLAY 0
 #define SAVE_FRAME 0
 
 int
@@ -55,6 +55,8 @@ main(int argc, char **argv)
 
   const size_t deltaT = interFramesDistance;
   std::queue<cv::Mat> previousFrames;
+
+  std::ofstream file_mse("../gnuplot/mit.txt", std::ios::out | std::ios::trunc);
 
   for ( ; ; ) {
 
@@ -105,13 +107,18 @@ main(int argc, char **argv)
       const double ENT = computeEntropy(frameY);
       const double ENTe = computeEntropy(imErr);
 
-      std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<std::endl;
+      //std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<std::endl;
+
+      // gnuplot
+      file_mse << frameNumber << " " << MSE << " " << PSNR << " " << ENT << " " << ENTe << std::endl;
     }
 
     previousFrames.push(frameY);
 
     ++frameNumber;
   }
+
+  file_mse.close();
 
   return EXIT_SUCCESS;
 }

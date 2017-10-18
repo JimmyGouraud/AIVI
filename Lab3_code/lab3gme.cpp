@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <queue>
 #include <sstream>
+#include <fstream>
 
 
 #include <opencv2/highgui/highgui.hpp> //VideoCapture, imshow, imwrite, ...
@@ -21,7 +22,7 @@
 #include "motionEstimation.hpp"
 #include "GME.hpp"
 
-#define DISPLAY 1
+#define DISPLAY 0
 #define SAVE_FRAME 0
 
 int
@@ -57,6 +58,8 @@ main(int argc, char **argv)
 
     const size_t deltaT = interFramesDistance;
     std::queue<cv::Mat> previousFrames;
+
+    std::ofstream file_mse("../gnuplot/gme.txt", std::ios::out | std::ios::trunc);
 
     for ( ; ; ) {
 
@@ -107,11 +110,14 @@ main(int argc, char **argv)
 
             #if DISPLAY
             cv::Mat imgMV = frameY.clone();
-            drawMVf(imgMV, motionVectors);
+            drawMVf(imgMV, motionVectors, 20);
             cv::imshow("MVs", imgMV);
             cv::Mat imgMV2 = frameY.clone();
-            drawMVf(imgMV2, motionVectorsGlobal);
+            drawMVf(imgMV2, motionVectorsGlobal, 20);
             cv::imshow("GMVs", imgMV2);
+            cv::imshow("motionError", motionError);
+            cv::imshow("YC", YC);
+            cv::imshow("YC2", YC2);
             cv::waitKey(10);
             #endif //DISPLAY
 
@@ -128,13 +134,18 @@ main(int argc, char **argv)
             const double ENTe = computeEntropy(imErr);
             const double MSE2 = computeMSE(frameY, YC2);
 
-            std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<" "<<MSE0<<" "<<MSE2<<std::endl;
+            //std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<" "<<MSE0<<" "<<MSE2<<std::endl;
+
+            // gnuplot
+            file_mse << frameNumber << " " << MSE << " " << PSNR << " " << ENT << " " << ENTe << " " << MSE0 << " " << MSE2 <<std::endl;
         }
 
         previousFrames.push(frameY);
 
         ++frameNumber;
     }
+
+    file_mse.close();
 
     return EXIT_SUCCESS;
 }

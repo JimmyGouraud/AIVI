@@ -25,38 +25,22 @@ computeGME(const cv::Mat &motionVectors,
   // pass from a matrix of size rows x cols to a matrix of size 1 x rows*cols.
   //Here you would call: reshape(0, 1);
 
-  // /!\ i et j défini par rapport au centre ! donc faire i - center; j - center
-
-  std::vector<cv::Point2f> srcPoints, dstPoints;
+  std::vector<cv::Point2f> src, dst;
   for (int i = 0; i < motionVectors.rows; i++) {
 	  for (int j = 0; j < motionVectors.cols; j++) {
-		  srcPoints.push_back(cv::Point2f(i,j)); // TODO: recentrer?
-		  dstPoints.push_back(srcPoints.back() + cv::Point2f(motionVectors.at<cv::Vec2f>(i,j)));
+		  src.push_back(cv::Point2f(i-motionVectors.rows/2,j-motionVectors.cols/2));
+		  dst.push_back(src.back() + cv::Point2f(motionVectors.at<cv::Vec2f>(i,j)));
 	  }
   }
-  cv::Mat homography = cv::findHomography(srcPoints, dstPoints, CV_RANSAC);
+
+  cv::Mat homography = cv::findHomography(src, dst, CV_RANSAC);
+  cv::perspectiveTransform(src, dst, homography);
 
   motionVectorsGlobal.create(motionVectors.rows, motionVectors.cols, CV_32FC2);
-  cv::perspectiveTransform(motionVectors, motionVectorsGlobal, homography);
-
-  cv::Mat energy(motionVectors.rows, motionVectors.cols, CV_32FC1);
-  float maxEnergy = 0;
   for (int i = 0; i < motionVectors.rows; i++) {
-	  for (int j = 0; j < motionVectors.cols; j++) {
-		  float x = (motionVectors.at<cv::Vec2f>(i,j)[0] - motionVectorsGlobal.at<cv::Vec2f>(i,j)[0]);
-		  float y = (motionVectors.at<cv::Vec2f>(i,j)[1] - motionVectorsGlobal.at<cv::Vec2f>(i,j)[1]);
-		  energy.at<float>(i,j) = sqrt(x*x + y*y); // distance L2
-		  if (energy.at<float>(i,j) > max) {
-			  maxEnergy = energy.at<float>(i,j);
-		  }
-	  }
-  }
-
-  // On normalize
-  for (int i = 0; i < motionVectors.rows; i++) {
-	  for (int j = 0; j < motionVectors.cols; j++) {
-		  energy.at<float>(i,j) /= maxEnergy;
-	  }
+	for (int j = 0; j < motionVectors.cols; j++) {
+		motionVectorsGlobal.at<cv::Vec2f>(i,j) = dst.at(i*motionVectors.cols+j) - src.at(i*motionVectors.cols+j);
+	}
   }
 
   assert(motionVectorsGlobal.type() == CV_32FC2);
@@ -73,7 +57,24 @@ computeGlobalMotionError(const cv::Mat &motionVectors,
   motionError.create(motionVectors.rows, motionVectors.cols, CV_32F);
 
   //TODO: compute the error between actual motion vectors and estimated global motion vectors
+  float maxMotionError = 0;
+  for (int i = 0; i < motionVectors.rows; i++) {
+	  for (int j = 0; j < motionVectors.cols; j++) {
+		  float x = (motionVectors.at<cv::Vec2f>(i,j)[0] - motionVectorsGlobal.at<cv::Vec2f>(i,j)[0]);
+		  float y = (motionVectors.at<cv::Vec2f>(i,j)[1] - motionVectorsGlobal.at<cv::Vec2f>(i,j)[1]);
+		  motionError.at<float>(i,j) = sqrt(x*x + y*y); // distance L2
+		  if (motionError.at<float>(i,j) > maxMotionError) {
+			  maxMotionError = motionError.at<float>(i,j);
+		  }
+	  }
+  }
 
+  // On normalize
+  for (int i = 0; i < motionVectors.rows; i++) {
+	  for (int j = 0; j < motionVectors.cols; j++) {
+		  motionError.at<float>(i,j) /= maxMotionError;
+	  }
+  }
 
   assert(motionError.type() == CV_32F);
 }

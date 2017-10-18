@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <queue>
 #include <sstream>
+#include <fstream>
 
 
 #include <opencv2/highgui/highgui.hpp> //VideoCapture, imshow, imwrite, ...
@@ -19,7 +20,7 @@
 #include "utils.hpp"
 #include "HornSchunck.hpp"
 
-#define DISPLAY 1
+#define DISPLAY 0
 #define SAVE_FRAME 0
 
 int
@@ -55,7 +56,7 @@ main(int argc, char **argv)
 
     const size_t deltaT = interFramesDistance;
     std::queue<cv::Mat> previousFrames;
-
+    std::ofstream file_mse("../gnuplot/hs.txt", std::ios::out | std::ios::trunc);
 
     for ( ; ; ) {
 
@@ -112,7 +113,10 @@ main(int argc, char **argv)
                 const double ENT = computeEntropy(frameY);
                 const double ENTe = computeEntropy(imErr);
 
-                std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<"\n";
+                //std::cout<<frameNumber<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe<<"\n";
+
+                // gnuplot
+                file_mse << frameNumber << " " << MSE << " " << PSNR << " " << ENT << " " << ENTe << std::endl;
             }
             else {
 
@@ -122,7 +126,7 @@ main(int argc, char **argv)
 
                 computeOpticalFlowHornSchunckMulti(frameY, prevY, lambda, criteria, nbLevels, levelsY, levelsPrevY, motionVectorsP);
 
-                std::cout<<frameNumber;
+                //std::cout<<frameNumber;
                 for (int i=nbLevels-1; i>=0; --i) {
                     const cv::Mat &motionVectors = motionVectorsP[i];
                     const cv::Mat &prevY = levelsPrevY[i];
@@ -150,18 +154,23 @@ main(int argc, char **argv)
                     const double ENT = computeEntropy(frameY);
                     const double ENTe = computeEntropy(imErr);
 
-                    std::cout<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe;
+                    //std::cout<<" "<<MSE<<" "<<PSNR<<" "<<ENT<<" "<<ENTe;
+
+                    // gnuplot
+                    if (i == 0) {
+                        file_mse << frameNumber << " " << MSE << " " << PSNR << " " << ENT << " " << ENTe << std::endl;
+                    }
                 }
-                std::cout<<"\n";
+                //std::cout<<"\n";
             }
-
-
         }
 
         previousFrames.push(frameY);
 
         ++frameNumber;
     }
+
+    file_mse.close();
 
     return EXIT_SUCCESS;
 }
